@@ -90,9 +90,27 @@
     <div class="order-placed-card card">
       <div class="placed-icon">✅</div>
       <h2>Order Placed!</h2>
-      <p>We'll notify you when it's ready.</p>
+      <p>Please pay using the QR below, then wait for your order.</p>
       <div class="order-token">
         Token #<span id="tracking-order-id"></span>
+      </div>
+    </div>
+
+    <!-- Payment QR card -->
+    <div class="payment-card card" id="payment-card">
+      <div class="payment-header">
+        <span class="payment-badge" id="payment-badge">💳 Payment Pending</span>
+      </div>
+      <div id="payment-body">
+        <p class="payment-instruction">Scan the QR code &amp; pay <strong id="pay-amount"></strong></p>
+        <p class="payment-ref">Use order #<span id="pay-ref"></span> as payment note</p>
+        <div class="qr-wrap" id="qr-wrap">
+          <div class="qr-loading">Loading QR…</div>
+        </div>
+        <div class="upi-name" id="upi-name-display"></div>
+      </div>
+      <div class="payment-done-banner hidden" id="payment-done-banner">
+        <span>✅ Payment confirmed by canteen</span>
       </div>
     </div>
 
@@ -113,7 +131,7 @@
           <div class="step-label">Ready for Pickup</div>
         </div>
       </div>
-      <div class="status-message" id="status-message">Waiting for canteen to accept your order…</div>
+      <div class="status-message" id="status-message">Pay first — canteen will start preparing once payment is confirmed.</div>
     </div>
 
     <div class="order-summary card">

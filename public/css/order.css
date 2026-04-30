@@ -267,3 +267,26 @@
 }
 .ready-banner h3 { color: var(--ready); font-size: 1.1rem; font-weight: 800; }
 .ready-banner p  { font-size: 0.85rem; color: #065F46; margin-top: 4px; }
+
+/* ── Payment card ── */
+.payment-card { padding: 0; overflow: hidden; }
+.payment-header { padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var(--border); }
+.payment-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.85rem; font-weight: 700; color: var(--pending);
+}
+.payment-badge.paid { color: var(--ready); }
+#payment-body { padding: 16px; text-align: center; }
+.payment-instruction { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 4px; }
+.payment-instruction strong { color: var(--primary); font-size: 1.1rem; }
+.payment-ref { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 14px; }
+.qr-wrap { display: flex; justify-content: center; margin-bottom: 10px; }
+.qr-wrap img { width: 200px; height: 200px; object-fit: contain; border-radius: 12px; border: 2px solid var(--border); }
+.qr-loading { color: var(--text-secondary); font-size: 0.85rem; padding: 40px; }
+.qr-missing { color: var(--text-secondary); font-size: 0.85rem; padding: 20px; border: 2px dashed var(--border); border-radius: 12px; }
+.upi-name { font-size: 0.82rem; color: var(--text-secondary); font-weight: 600; }
+.payment-done-banner {
+  padding: 14px 16px; text-align: center;
+  background: var(--ready-bg); border-top: 1px solid #6EE7B7;
+  color: #065F46; font-weight: 700; font-size: 0.9rem;
+}

@@ -9,6 +9,9 @@ const server = http.createServer(app);
 const io     = new Server(server);
 const PORT   = process.env.PORT || 3000;
 
+// Admin PIN — set ADMIN_PIN env var in Railway, default is 1234
+const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
+
 const MENU = [
   { id: 1,  category: 'Beverages', name: 'Chai',               price: 10,  emoji: '☕' },
   { id: 2,  category: 'Beverages', name: 'Coffee',             price: 20,  emoji: '☕' },
@@ -28,11 +31,39 @@ const MENU = [
   { id: 16, category: 'Desserts',  name: 'Rasgulla (2 pcs)',   price: 30,  emoji: '🍮' },
 ];
 
-app.use(express.json());
+app.use(express.json({ limit: '5mb' })); // allow base64 QR image uploads
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── Menu ───────────────────────────────────────────────────────────────────
 app.get('/api/menu', (_req, res) => res.json(MENU));
 
+// ── Payment config ─────────────────────────────────────────────────────────
+app.get('/api/payment-config', async (_req, res) => {
+  try {
+    const qrImage = await storage.getConfig('qr_image');
+    const upiName = await storage.getConfig('upi_name');
+    res.json({ qrImage, upiName });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not load payment config' });
+  }
+});
+
+app.post('/api/payment-config', async (req, res) => {
+  const { pin, qrImage, upiName } = req.body;
+  if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'Wrong PIN' });
+  if (!qrImage) return res.status(400).json({ error: 'QR image required' });
+  try {
+    await storage.setConfig('qr_image', qrImage);
+    await storage.setConfig('upi_name', upiName || '');
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not save config' });
+  }
+});
+
+// ── Orders ─────────────────────────────────────────────────────────────────
 app.post('/api/orders', async (req, res) => {
   const { customer_name, desk_number, items } = req.body;
   if (!customer_name?.trim() || !desk_number?.toString().trim() || !items?.length) {
@@ -57,8 +88,7 @@ app.post('/api/orders', async (req, res) => {
 
 app.get('/api/orders', async (_req, res) => {
   try {
-    const orders = await storage.getActiveOrders();
-    res.json(orders.slice().reverse());
+    res.json((await storage.getActiveOrders()).slice().reverse());
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Could not fetch orders' });
@@ -91,19 +121,37 @@ app.patch('/api/orders/:id/status', async (req, res) => {
   }
 });
 
+app.patch('/api/orders/:id/payment', async (req, res) => {
+  const { payment_status } = req.body;
+  if (!['awaiting', 'paid'].includes(payment_status)) {
+    return res.status(400).json({ error: 'Invalid payment status' });
+  }
+  try {
+    const order = await storage.updatePaymentStatus(+req.params.id, payment_status);
+    if (!order) return res.status(404).json({ error: 'Not found' });
+    io.emit('order_updated', order);
+    res.json(order);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not update payment' });
+  }
+});
+
+// ── Socket ─────────────────────────────────────────────────────────────────
 io.on('connection', async socket => {
   try {
-    const orders = await storage.getActiveOrders();
-    socket.emit('initial_orders', orders);
+    socket.emit('initial_orders', await storage.getActiveOrders());
   } catch {}
 });
 
+// ── Start ──────────────────────────────────────────────────────────────────
 storage.init().then(() => {
   server.listen(PORT, () => {
     console.log(`\n🍽️  Canteen Ordering System`);
     console.log(`   Customer ordering : http://localhost:${PORT}/`);
     console.log(`   Kitchen dashboard : http://localhost:${PORT}/kitchen.html`);
-    console.log(`   Status board      : http://localhost:${PORT}/status.html\n`);
+    console.log(`   Status board      : http://localhost:${PORT}/status.html`);
+    console.log(`   Admin (QR setup)  : http://localhost:${PORT}/admin.html\n`);
   });
 }).catch(err => {
   console.error('Failed to initialise storage:', err);

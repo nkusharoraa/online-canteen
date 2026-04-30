@@ -23,48 +23,62 @@ function loadJson() {
   if (fs.existsSync(DB_FILE)) {
     try { jsonDb = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); return jsonDb; } catch {}
   }
-  jsonDb = { orders: [], nextOrderId: 1 };
+  jsonDb = { orders: [], nextOrderId: 1, config: {} };
   return jsonDb;
 }
 
 function saveJson() { fs.writeFileSync(DB_FILE, JSON.stringify(jsonDb, null, 2)); }
 
-// ── Row normaliser (Postgres → plain object) ───────────────────────────────
+// ── Row normalisers ────────────────────────────────────────────────────────
 function toOrder(row) {
   return {
-    id:            Number(row.id),
-    customer_name: row.customer_name,
-    desk_number:   row.desk_number,
-    items:         typeof row.items === 'string' ? JSON.parse(row.items) : row.items,
-    total:         Number(row.total),
-    status:        row.status,
-    created_at:    row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
-    updated_at:    row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
+    id:             Number(row.id),
+    customer_name:  row.customer_name,
+    desk_number:    row.desk_number,
+    items:          typeof row.items === 'string' ? JSON.parse(row.items) : row.items,
+    total:          Number(row.total),
+    status:         row.status,
+    payment_status: row.payment_status,
+    created_at:     row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+    updated_at:     row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
   };
 }
 
-// ── Public API ─────────────────────────────────────────────────────────────
+// ── Init ───────────────────────────────────────────────────────────────────
 async function init() {
   if (usePostgres) {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS orders (
-        id            SERIAL PRIMARY KEY,
-        customer_name TEXT        NOT NULL,
-        desk_number   TEXT        NOT NULL,
-        items         JSONB       NOT NULL,
-        total         INTEGER     NOT NULL DEFAULT 0,
-        status        TEXT        NOT NULL DEFAULT 'pending',
-        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        id             SERIAL PRIMARY KEY,
+        customer_name  TEXT        NOT NULL,
+        desk_number    TEXT        NOT NULL,
+        items          JSONB       NOT NULL,
+        total          INTEGER     NOT NULL DEFAULT 0,
+        status         TEXT        NOT NULL DEFAULT 'pending',
+        payment_status TEXT        NOT NULL DEFAULT 'awaiting',
+        created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS config (
+        key   TEXT PRIMARY KEY,
+        value TEXT
+      )
+    `);
+    // Add payment_status column to existing deployments that don't have it
+    await pool.query(`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'awaiting'
     `);
     console.log('Connected to PostgreSQL');
   } else {
-    loadJson();
+    const db = loadJson();
+    if (!db.config) { db.config = {}; saveJson(); }
     console.log('Using local JSON storage (data.json)');
   }
 }
 
+// ── Orders ─────────────────────────────────────────────────────────────────
 async function getActiveOrders() {
   if (usePostgres) {
     const { rows } = await pool.query(`SELECT * FROM orders WHERE status != 'completed' ORDER BY id`);
@@ -90,7 +104,7 @@ async function createOrder({ customer_name, desk_number, items, total }) {
     return toOrder(rows[0]);
   }
   const db = loadJson();
-  const order = { id: db.nextOrderId++, customer_name, desk_number, items, total, status: 'pending', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+  const order = { id: db.nextOrderId++, customer_name, desk_number, items, total, status: 'pending', payment_status: 'awaiting', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
   db.orders.push(order);
   saveJson();
   return order;
@@ -113,4 +127,43 @@ async function updateOrderStatus(id, status) {
   return order;
 }
 
-module.exports = { init, getActiveOrders, getOrderById, createOrder, updateOrderStatus };
+async function updatePaymentStatus(id, payment_status) {
+  if (usePostgres) {
+    const { rows } = await pool.query(
+      `UPDATE orders SET payment_status=$1, updated_at=NOW() WHERE id=$2 RETURNING *`,
+      [payment_status, id]
+    );
+    return rows[0] ? toOrder(rows[0]) : null;
+  }
+  const db = loadJson();
+  const order = db.orders.find(o => o.id === id);
+  if (!order) return null;
+  order.payment_status = payment_status;
+  order.updated_at = new Date().toISOString();
+  saveJson();
+  return order;
+}
+
+// ── Config ─────────────────────────────────────────────────────────────────
+async function getConfig(key) {
+  if (usePostgres) {
+    const { rows } = await pool.query('SELECT value FROM config WHERE key=$1', [key]);
+    return rows[0]?.value ?? null;
+  }
+  return loadJson().config[key] ?? null;
+}
+
+async function setConfig(key, value) {
+  if (usePostgres) {
+    await pool.query(
+      `INSERT INTO config (key, value) VALUES ($1,$2) ON CONFLICT (key) DO UPDATE SET value=$2`,
+      [key, value]
+    );
+  } else {
+    const db = loadJson();
+    db.config[key] = value;
+    saveJson();
+  }
+}
+
+module.exports = { init, getActiveOrders, getOrderById, createOrder, updateOrderStatus, updatePaymentStatus, getConfig, setConfig };

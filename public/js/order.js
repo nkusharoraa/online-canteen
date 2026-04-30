@@ -251,25 +251,70 @@ $('btn-place-order').addEventListener('click', async () => {
   }
 });
 
+// ── Payment QR ─────────────────────────────────────────────────────────────
+let paymentConfig = null;
+
+async function loadPaymentConfig() {
+  try {
+    const res = await fetch('/api/payment-config');
+    paymentConfig = await res.json();
+  } catch { paymentConfig = {}; }
+}
+
+function renderPaymentCard(order) {
+  $('pay-amount').textContent = `₹${order.total}`;
+  $('pay-ref').textContent = order.id;
+
+  const qrWrap = $('qr-wrap');
+  if (paymentConfig?.qrImage) {
+    qrWrap.innerHTML = `<img src="${paymentConfig.qrImage}" alt="Paytm QR">`;
+  } else {
+    qrWrap.innerHTML = `<div class="qr-missing">QR not set up yet.<br>Ask admin to upload via /admin.html</div>`;
+  }
+
+  $('upi-name-display').textContent = paymentConfig?.upiName || '';
+  updatePaymentBadge(order.payment_status);
+}
+
+function updatePaymentBadge(payment_status) {
+  const badge  = $('payment-badge');
+  const banner = $('payment-done-banner');
+  const body   = $('payment-body');
+
+  if (payment_status === 'paid') {
+    badge.textContent = '✅ Payment Confirmed';
+    badge.classList.add('paid');
+    banner.classList.remove('hidden');
+    body.style.opacity = '0.5';
+  } else {
+    badge.textContent = '💳 Payment Pending';
+    badge.classList.remove('paid');
+    banner.classList.add('hidden');
+    body.style.opacity = '1';
+  }
+}
+
 // ── Tracking screen ────────────────────────────────────────────────────────
-function showTrackingScreen(order) {
+async function showTrackingScreen(order) {
   $('tracking-order-id').textContent = order.id;
   $('tracking-items').innerHTML = order.items.map(i =>
     `<div class="summary-item"><span>${i.emoji} ${i.name} × ${i.quantity}</span><span>₹${i.price * i.quantity}</span></div>`
   ).join('');
   $('tracking-total').textContent = `₹${order.total}`;
-  updateTrackingStatus(order.status);
+  if (!paymentConfig) await loadPaymentConfig();
+  renderPaymentCard(order);
+  updateTrackingStatus(order.status, order.payment_status);
   showScreen('screen-tracking');
 }
 
-function updateTrackingStatus(status) {
+function updateTrackingStatus(status, payment_status) {
   const steps = { pending: 0, preparing: 1, ready: 2 };
   const current = steps[status] ?? 0;
 
   ['pending', 'preparing', 'ready'].forEach((s, i) => {
     const el = $(`step-${s}`);
     el.classList.remove('active', 'done');
-    if (i < current)      el.classList.add('done');
+    if (i < current)        el.classList.add('done');
     else if (i === current) el.classList.add('active');
   });
 
@@ -278,7 +323,9 @@ function updateTrackingStatus(status) {
   });
 
   const messages = {
-    pending:   '⏳ Waiting for canteen to accept your order…',
+    pending:   payment_status === 'paid'
+                 ? '⏳ Payment confirmed — waiting for canteen to start preparing…'
+                 : '💳 Please scan the QR and pay. Canteen will prepare after payment.',
     preparing: '👨‍🍳 Your order is being prepared!',
     ready:     '🎉 Your order is ready! Please collect it.',
     completed: '✅ Order collected. Enjoy your meal!',
@@ -306,11 +353,17 @@ $('btn-new-order').addEventListener('click', () => {
 socket.on('order_updated', order => {
   if (trackedOrder && order.id === trackedOrder.id) {
     trackedOrder = order;
-    updateTrackingStatus(order.status);
+    updatePaymentBadge(order.payment_status);
+    updateTrackingStatus(order.status, order.payment_status);
+    if (order.payment_status === 'paid' && order.status === 'pending') {
+      showToast('✅ Payment confirmed! Canteen will start soon.', 'success');
+    }
     if (order.status === 'ready') {
       showToast('🎉 Your order is ready for pickup!', 'success');
-      // Vibrate if supported
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     }
   }
 });
+
+// Pre-load payment config in background so QR shows instantly
+loadPaymentConfig();

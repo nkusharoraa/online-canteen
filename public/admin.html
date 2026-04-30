@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin – Canteen Setup</title>
+<link rel="stylesheet" href="/css/app.css">
+<style>
+  body { background: var(--bg); }
+  .admin-wrap { max-width: 480px; margin: 0 auto; padding: 24px 16px 48px; }
+  h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+  .sub { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px; }
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 7px; }
+  .form-group input[type=text], .form-group input[type=password] {
+    width: 100%; padding: 12px 14px; border: 1.5px solid var(--border);
+    border-radius: 10px; font-size: 1rem; outline: none; background: #fff;
+  }
+  .form-group input:focus { border-color: var(--primary); }
+  .qr-preview { text-align: center; margin: 16px 0; min-height: 80px; }
+  .qr-preview img { max-width: 220px; border-radius: 12px; border: 2px solid var(--border); }
+  .qr-placeholder { color: var(--text-secondary); font-size: 0.85rem; padding: 30px; border: 2px dashed var(--border); border-radius: 12px; }
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: 12px; padding: 28px;
+    text-align: center; cursor: pointer; transition: all 0.2s; background: #fff;
+  }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--primary); background: var(--primary-light); }
+  .drop-zone p { font-size: 0.9rem; color: var(--text-secondary); margin-top: 8px; }
+  .drop-zone input { display: none; }
+  .btn-full { width: 100%; justify-content: center; padding: 14px; font-size: 1rem; border-radius: 10px; margin-top: 8px; }
+  .success-msg { background: #ECFDF5; border: 1px solid #6EE7B7; color: #065F46; padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; display: none; margin-top: 12px; text-align: center; }
+  .error-msg   { background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; display: none; margin-top: 12px; text-align: center; }
+  .current-label { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div class="header-row">
+    <div>
+      <h1>⚙️ Admin Setup</h1>
+      <p>Configure Paytm QR for payments</p>
+    </div>
+    <a href="/" style="color:#fff;font-size:0.85rem;">← Back</a>
+  </div>
+</header>
+
+<div class="admin-wrap">
+  <div class="card">
+    <h2>Paytm QR Code</h2>
+    <p class="sub">Upload your Paytm QR image. Customers will scan this after placing an order.</p>
+
+    <div class="form-group">
+      <label>Current QR</label>
+      <div class="qr-preview" id="qr-preview">
+        <div class="qr-placeholder">No QR uploaded yet</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Upload New QR Image</label>
+      <div class="drop-zone" id="drop-zone">
+        <div style="font-size:2rem">📷</div>
+        <p>Tap to select your Paytm QR image<br><small>PNG or JPG</small></p>
+        <input type="file" id="qr-file" accept="image/png,image/jpeg,image/webp">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>UPI Name (shown to customer)</label>
+      <input type="text" id="upi-name" placeholder="e.g. Office Canteen" />
+    </div>
+
+    <div class="form-group">
+      <label>Admin PIN</label>
+      <input type="password" id="admin-pin" placeholder="Enter PIN (default: 1234)" />
+    </div>
+
+    <button class="btn btn-primary btn-full" id="btn-save">Save Payment Settings</button>
+    <div class="success-msg" id="success-msg">✅ Saved! Customers will now see the QR at checkout.</div>
+    <div class="error-msg"   id="error-msg"></div>
+  </div>
+</div>
+
+<script>
+const dropZone  = document.getElementById('drop-zone');
+const fileInput = document.getElementById('qr-file');
+const preview   = document.getElementById('qr-preview');
+let selectedImage = null;
+
+// Load current config
+fetch('/api/payment-config').then(r => r.json()).then(cfg => {
+  if (cfg.qrImage) {
+    preview.innerHTML = `<div class="current-label">Currently saved:</div><img src="${cfg.qrImage}" alt="QR">`;
+    selectedImage = cfg.qrImage;
+  }
+  if (cfg.upiName) document.getElementById('upi-name').value = cfg.upiName;
+});
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    selectedImage = e.target.result;
+    preview.innerHTML = `<img src="${selectedImage}" alt="QR Preview">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+document.getElementById('btn-save').addEventListener('click', async () => {
+  const pin     = document.getElementById('admin-pin').value.trim();
+  const upiName = document.getElementById('upi-name').value.trim();
+  const successEl = document.getElementById('success-msg');
+  const errorEl   = document.getElementById('error-msg');
+  successEl.style.display = 'none';
+  errorEl.style.display   = 'none';
+
+  if (!selectedImage) { errorEl.textContent = 'Please upload a QR image first.'; errorEl.style.display = 'block'; return; }
+  if (!pin)            { errorEl.textContent = 'Please enter your admin PIN.';    errorEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    const res = await fetch('/api/payment-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin, qrImage: selectedImage, upiName }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    successEl.style.display = 'block';
+  } catch (e) {
+    errorEl.textContent = e.message;
+    errorEl.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Payment Settings';
+  }
+});
+</script>
+</body>
+</html>

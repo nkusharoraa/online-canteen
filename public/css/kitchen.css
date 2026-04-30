@@ -76,6 +76,13 @@
 
 .order-total-bar { padding: 8px 14px; background: var(--bg); display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; }
 
+.payment-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; font-size: 0.8rem; font-weight: 600; gap: 10px;
+}
+.payment-awaiting { background: #FFFBEB; color: #92400E; border-top: 1px solid #FDE68A; }
+.payment-paid     { background: #ECFDF5; color: #065F46; border-top: 1px solid #6EE7B7; }
+
 .order-actions { display: flex; gap: 8px; padding: 12px 14px; flex-wrap: wrap; }
 .order-actions .btn { flex: 1; justify-content: center; font-size: 0.8rem; }
 
