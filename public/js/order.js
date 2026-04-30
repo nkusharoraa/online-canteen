@@ -273,24 +273,48 @@ function renderPaymentCard(order) {
   }
 
   $('upi-name-display').textContent = paymentConfig?.upiName || '';
-  updatePaymentBadge(order.payment_status);
+  updatePaymentBadge(order.payment_status, order.utr);
 }
 
-function updatePaymentBadge(payment_status) {
-  const badge  = $('payment-badge');
-  const banner = $('payment-done-banner');
-  const body   = $('payment-body');
+$('btn-submit-utr').addEventListener('click', async () => {
+  const utr = $('utr-input').value.trim();
+  if (!utr) { $('utr-input').focus(); $('utr-input').style.borderColor = '#EF4444'; return; }
+  $('utr-input').style.borderColor = '';
+
+  const btn = $('btn-submit-utr');
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  try {
+    const res = await fetch(`/api/orders/${trackedOrder.id}/payment`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ utr }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    // UI updates come via socket event
+  } catch (e) {
+    showToast(e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Done';
+  }
+});
+
+function updatePaymentBadge(payment_status, utr) {
+  const badge      = $('payment-badge');
+  const banner     = $('payment-done-banner');
+  const utrSection = document.querySelector('.utr-section');
 
   if (payment_status === 'paid') {
-    badge.textContent = '✅ Payment Confirmed';
+    badge.textContent = '✅ Payment Submitted';
     badge.classList.add('paid');
     banner.classList.remove('hidden');
-    body.style.opacity = '0.5';
+    if (utrSection) utrSection.innerHTML = `<p class="utr-submitted">UTR: <code>${utr}</code> — submitted</p>`;
   } else {
-    badge.textContent = '💳 Payment Pending';
+    badge.textContent = '💳 Pay to confirm order';
     badge.classList.remove('paid');
     banner.classList.add('hidden');
-    body.style.opacity = '1';
   }
 }
 
@@ -356,7 +380,7 @@ socket.on('order_updated', order => {
     updatePaymentBadge(order.payment_status);
     updateTrackingStatus(order.status, order.payment_status);
     if (order.payment_status === 'paid' && order.status === 'pending') {
-      showToast('✅ Payment confirmed! Canteen will start soon.', 'success');
+      showToast('✅ UTR submitted! Canteen will start preparing soon.', 'success');
     }
     if (order.status === 'ready') {
       showToast('🎉 Your order is ready for pickup!', 'success');

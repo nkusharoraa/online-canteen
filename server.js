@@ -122,12 +122,10 @@ app.patch('/api/orders/:id/status', async (req, res) => {
 });
 
 app.patch('/api/orders/:id/payment', async (req, res) => {
-  const { payment_status } = req.body;
-  if (!['awaiting', 'paid'].includes(payment_status)) {
-    return res.status(400).json({ error: 'Invalid payment status' });
-  }
+  const { utr } = req.body;
+  if (!utr?.toString().trim()) return res.status(400).json({ error: 'UTR is required' });
   try {
-    const order = await storage.updatePaymentStatus(+req.params.id, payment_status);
+    const order = await storage.updatePaymentStatus(+req.params.id, 'paid', utr.toString().trim());
     if (!order) return res.status(404).json({ error: 'Not found' });
     io.emit('order_updated', order);
     res.json(order);

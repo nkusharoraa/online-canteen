@@ -86,9 +86,6 @@ function renderOrders(flashId = null) {
   container.querySelectorAll('[data-action]').forEach(btn => {
     btn.addEventListener('click', () => updateStatus(+btn.dataset.orderId, btn.dataset.action));
   });
-  container.querySelectorAll('[data-pay]').forEach(btn => {
-    btn.addEventListener('click', () => confirmPayment(+btn.dataset.pay));
-  });
 
   updateStats();
 }
@@ -123,10 +120,9 @@ function orderCardHTML(order) {
       </div>
     </div>
     <div class="payment-row ${paid ? 'payment-paid' : 'payment-awaiting'}">
-      <span>${paid ? '✅ Payment Received' : '💳 Awaiting Payment'}</span>
-      ${!paid && order.status !== 'completed'
-        ? `<button class="btn btn-success btn-sm" data-pay="${order.id}">Confirm Payment ✓</button>`
-        : ''
+      ${paid
+        ? `<span>✅ Paid</span><span class="utr-display">UTR: ${order.utr}</span>`
+        : `<span>💳 Awaiting payment from customer</span>`
       }
     </div>
     <div class="order-items">
@@ -147,23 +143,6 @@ function orderCardHTML(order) {
       `).join('')}
     </div>` : ''}
   </div>`;
-}
-
-// ── Payment confirm ────────────────────────────────────────────────────────
-async function confirmPayment(orderId) {
-  const btn = document.querySelector(`[data-pay="${orderId}"]`);
-  if (btn) { btn.disabled = true; btn.textContent = '…'; }
-  try {
-    const res = await fetch(`/api/orders/${orderId}/payment`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payment_status: 'paid' }),
-    });
-    if (!res.ok) throw new Error('Failed');
-  } catch {
-    showToast('Could not confirm payment', 'error');
-    if (btn) { btn.disabled = false; btn.textContent = 'Confirm Payment ✓'; }
-  }
 }
 
 // ── Status update ──────────────────────────────────────────────────────────

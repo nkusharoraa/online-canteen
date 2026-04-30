@@ -82,6 +82,7 @@
 }
 .payment-awaiting { background: #FFFBEB; color: #92400E; border-top: 1px solid #FDE68A; }
 .payment-paid     { background: #ECFDF5; color: #065F46; border-top: 1px solid #6EE7B7; }
+.utr-display { font-family: monospace; font-size: 0.8rem; color: #065F46; background: #D1FAE5; padding: 2px 8px; border-radius: 4px; }
 
 .order-actions { display: flex; gap: 8px; padding: 12px 14px; flex-wrap: wrap; }
 .order-actions .btn { flex: 1; justify-content: center; font-size: 0.8rem; }

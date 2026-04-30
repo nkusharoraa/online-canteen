@@ -102,15 +102,23 @@
         <span class="payment-badge" id="payment-badge">💳 Payment Pending</span>
       </div>
       <div id="payment-body">
-        <p class="payment-instruction">Scan the QR code &amp; pay <strong id="pay-amount"></strong></p>
+        <p class="payment-instruction">Scan &amp; pay <strong id="pay-amount"></strong></p>
         <p class="payment-ref">Use order #<span id="pay-ref"></span> as payment note</p>
         <div class="qr-wrap" id="qr-wrap">
           <div class="qr-loading">Loading QR…</div>
         </div>
         <div class="upi-name" id="upi-name-display"></div>
+        <div class="utr-section">
+          <label class="utr-label">After paying, enter your UTR / Transaction ID</label>
+          <div class="utr-row">
+            <input id="utr-input" type="text" placeholder="e.g. 316120721839" autocomplete="off" />
+            <button class="btn btn-success" id="btn-submit-utr">Done</button>
+          </div>
+          <p class="utr-hint">Find UTR in Paytm → History → tap the payment → Transaction ID</p>
+        </div>
       </div>
       <div class="payment-done-banner hidden" id="payment-done-banner">
-        <span>✅ Payment confirmed by canteen</span>
+        <span>✅ Payment received — canteen will start preparing shortly!</span>
       </div>
     </div>
 

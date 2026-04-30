@@ -39,6 +39,7 @@ function toOrder(row) {
     total:          Number(row.total),
     status:         row.status,
     payment_status: row.payment_status,
+    utr:            row.utr ?? null,
     created_at:     row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
     updated_at:     row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
   };
@@ -66,10 +67,8 @@ async function init() {
         value TEXT
       )
     `);
-    // Add payment_status column to existing deployments that don't have it
-    await pool.query(`
-      ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'awaiting'
-    `);
+    await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'awaiting'`);
+    await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS utr TEXT`);
     console.log('Connected to PostgreSQL');
   } else {
     const db = loadJson();
@@ -104,7 +103,7 @@ async function createOrder({ customer_name, desk_number, items, total }) {
     return toOrder(rows[0]);
   }
   const db = loadJson();
-  const order = { id: db.nextOrderId++, customer_name, desk_number, items, total, status: 'pending', payment_status: 'awaiting', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+  const order = { id: db.nextOrderId++, customer_name, desk_number, items, total, status: 'pending', payment_status: 'awaiting', utr: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
   db.orders.push(order);
   saveJson();
   return order;
@@ -127,11 +126,11 @@ async function updateOrderStatus(id, status) {
   return order;
 }
 
-async function updatePaymentStatus(id, payment_status) {
+async function updatePaymentStatus(id, payment_status, utr = null) {
   if (usePostgres) {
     const { rows } = await pool.query(
-      `UPDATE orders SET payment_status=$1, updated_at=NOW() WHERE id=$2 RETURNING *`,
-      [payment_status, id]
+      `UPDATE orders SET payment_status=$1, utr=$2, updated_at=NOW() WHERE id=$3 RETURNING *`,
+      [payment_status, utr, id]
     );
     return rows[0] ? toOrder(rows[0]) : null;
   }
@@ -139,6 +138,7 @@ async function updatePaymentStatus(id, payment_status) {
   const order = db.orders.find(o => o.id === id);
   if (!order) return null;
   order.payment_status = payment_status;
+  order.utr = utr;
   order.updated_at = new Date().toISOString();
   saveJson();
   return order;
