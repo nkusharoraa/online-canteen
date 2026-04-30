@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#FF6B35">
+<title>Kitchen Dashboard – Canteen</title>
+<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/css/kitchen.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-row">
+    <div>
+      <h1>👨‍🍳 Kitchen Dashboard</h1>
+      <p id="live-time"></p>
+    </div>
+    <div class="header-stats">
+      <div class="stat-pill" id="stat-pending">0 Pending</div>
+      <div class="stat-pill preparing" id="stat-preparing">0 Preparing</div>
+    </div>
+  </div>
+  <!-- Filter tabs -->
+  <div class="category-tabs scroll-x" id="filter-tabs">
+    <button class="cat-tab active" data-filter="active">Active</button>
+    <button class="cat-tab" data-filter="pending">Pending</button>
+    <button class="cat-tab" data-filter="preparing">Preparing</button>
+    <button class="cat-tab" data-filter="ready">Ready</button>
+    <button class="cat-tab" data-filter="completed">Completed</button>
+    <button class="cat-tab" data-filter="all">All</button>
+  </div>
+</header>
+
+<main class="kitchen-main" id="orders-container">
+  <div class="empty-state">
+    <div class="empty-icon">📋</div>
+    <h3>No orders yet</h3>
+    <p>Orders will appear here in real-time</p>
+  </div>
+</main>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/kitchen.js"></script>
+</body>
+</html>

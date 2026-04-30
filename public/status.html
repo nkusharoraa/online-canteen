@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#FF6B35">
+<title>Order Status Board – Canteen</title>
+<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/css/status.css">
+</head>
+<body>
+
+<header class="status-header">
+  <div class="status-header-left">
+    <span class="header-logo">🍽️</span>
+    <div>
+      <h1>Office Canteen</h1>
+      <p>Order Status Board</p>
+    </div>
+  </div>
+  <div class="header-clock" id="clock"></div>
+</header>
+
+<main class="status-board">
+
+  <div class="status-column">
+    <div class="column-header preparing-header">
+      <span class="col-icon">👨‍🍳</span>
+      <div>
+        <div class="col-title">Being Prepared</div>
+        <div class="col-count" id="count-preparing">0 orders</div>
+      </div>
+    </div>
+    <div class="status-cards" id="col-preparing">
+      <div class="no-orders">No orders being prepared</div>
+    </div>
+  </div>
+
+  <div class="status-column">
+    <div class="column-header ready-header">
+      <span class="col-icon">✅</span>
+      <div>
+        <div class="col-title">Ready for Pickup!</div>
+        <div class="col-count" id="count-ready">0 orders</div>
+      </div>
+    </div>
+    <div class="status-cards" id="col-ready">
+      <div class="no-orders">No orders ready yet</div>
+    </div>
+  </div>
+
+</main>
+
+<div class="pending-strip" id="pending-strip"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/status.js"></script>
+</body>
+</html>

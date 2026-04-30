@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#FF6B35">
+<title>Office Canteen</title>
+<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/css/order.css">
+</head>
+<body>
+
+<!-- ── Step 1: Identity ── -->
+<div id="screen-identity" class="screen">
+  <div class="identity-hero">
+    <div class="hero-emoji">🍽️</div>
+    <h1>Office Canteen</h1>
+    <p>Order from your desk, pick up when it's ready</p>
+  </div>
+  <div class="identity-form card">
+    <div class="form-group">
+      <label for="customer-name">Your Name</label>
+      <input id="customer-name" type="text" placeholder="e.g. Rahul Sharma" autocomplete="name" />
+    </div>
+    <div class="form-group">
+      <label for="desk-number">Desk / Seat Number</label>
+      <input id="desk-number" type="text" placeholder="e.g. A-12 or Floor 2 Seat 5" />
+    </div>
+    <button class="btn btn-primary btn-full" id="btn-start">
+      Browse Menu →
+    </button>
+  </div>
+</div>
+
+<!-- ── Step 2: Menu ── -->
+<div id="screen-menu" class="screen hidden">
+  <header class="app-header">
+    <div class="header-row">
+      <div>
+        <h1>🍽️ Office Canteen</h1>
+        <p id="header-greeting"></p>
+      </div>
+      <button class="cart-btn" id="cart-toggle-btn">
+        🛒 <span id="cart-count">0</span>
+        <span class="cart-total" id="cart-total-header">₹0</span>
+      </button>
+    </div>
+    <!-- Category tabs -->
+    <div class="category-tabs scroll-x" id="category-tabs"></div>
+  </header>
+
+  <main class="menu-main" id="menu-container"></main>
+
+  <!-- Fixed cart bar -->
+  <div class="cart-bar hidden" id="cart-bar">
+    <div class="cart-bar-left">
+      <span class="cart-bar-count" id="cart-bar-count">0 items</span>
+      <span class="cart-bar-total" id="cart-bar-total">₹0</span>
+    </div>
+    <button class="btn btn-primary" id="cart-bar-btn">View Cart</button>
+  </div>
+</div>
+
+<!-- ── Cart drawer ── -->
+<div class="drawer-overlay hidden" id="drawer-overlay"></div>
+<div class="cart-drawer hidden" id="cart-drawer">
+  <div class="drawer-header">
+    <h2>Your Order</h2>
+    <button class="drawer-close" id="cart-close">✕</button>
+  </div>
+  <div class="drawer-body" id="cart-items-list"></div>
+  <div class="drawer-footer">
+    <div class="cart-summary">
+      <span>Total</span>
+      <span id="cart-total-drawer">₹0</span>
+    </div>
+    <button class="btn btn-primary btn-full" id="btn-place-order">Place Order</button>
+  </div>
+</div>
+
+<!-- ── Step 3: Order placed / tracking ── -->
+<div id="screen-tracking" class="screen hidden">
+  <header class="app-header">
+    <div class="header-row">
+      <h1>🍽️ Office Canteen</h1>
+      <button class="btn btn-outline btn-sm" id="btn-new-order">New Order</button>
+    </div>
+  </header>
+  <main class="tracking-main">
+    <div class="order-placed-card card">
+      <div class="placed-icon">✅</div>
+      <h2>Order Placed!</h2>
+      <p>We'll notify you when it's ready.</p>
+      <div class="order-token">
+        Token #<span id="tracking-order-id"></span>
+      </div>
+    </div>
+
+    <div class="tracking-status card" id="tracking-status-card">
+      <div class="status-timeline">
+        <div class="timeline-step" id="step-pending">
+          <div class="step-dot"></div>
+          <div class="step-label">Order Received</div>
+        </div>
+        <div class="timeline-line"></div>
+        <div class="timeline-step" id="step-preparing">
+          <div class="step-dot"></div>
+          <div class="step-label">Being Prepared</div>
+        </div>
+        <div class="timeline-line"></div>
+        <div class="timeline-step" id="step-ready">
+          <div class="step-dot"></div>
+          <div class="step-label">Ready for Pickup</div>
+        </div>
+      </div>
+      <div class="status-message" id="status-message">Waiting for canteen to accept your order…</div>
+    </div>
+
+    <div class="order-summary card">
+      <h3>Order Summary</h3>
+      <div id="tracking-items"></div>
+      <div class="order-total-row">
+        <span>Total</span>
+        <span id="tracking-total"></span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/order.js"></script>
+</body>
+</html>
