@@ -7,47 +7,80 @@
 <link rel="stylesheet" href="/css/app.css">
 <style>
   body { background: var(--bg); }
-  .admin-wrap { max-width: 480px; margin: 0 auto; padding: 24px 16px 48px; }
+  .admin-wrap { max-width: 560px; margin: 0 auto; padding: 24px 16px 60px; display: flex; flex-direction: column; gap: 20px; }
   h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
   .sub { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px; }
-  .form-group { margin-bottom: 18px; }
+  .form-group { margin-bottom: 16px; }
   .form-group label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 7px; }
   .form-group input[type=text], .form-group input[type=password] {
     width: 100%; padding: 12px 14px; border: 1.5px solid var(--border);
     border-radius: 10px; font-size: 1rem; outline: none; background: #fff;
   }
   .form-group input:focus { border-color: var(--primary); }
-  .qr-preview { text-align: center; margin: 16px 0; min-height: 80px; }
-  .qr-preview img { max-width: 220px; border-radius: 12px; border: 2px solid var(--border); }
-  .qr-placeholder { color: var(--text-secondary); font-size: 0.85rem; padding: 30px; border: 2px dashed var(--border); border-radius: 12px; }
+  .qr-preview { text-align: center; margin: 12px 0; min-height: 60px; }
+  .qr-preview img { max-width: 200px; border-radius: 12px; border: 2px solid var(--border); }
+  .qr-placeholder { color: var(--text-secondary); font-size: 0.85rem; padding: 24px; border: 2px dashed var(--border); border-radius: 12px; }
   .drop-zone {
-    border: 2px dashed var(--border); border-radius: 12px; padding: 28px;
+    border: 2px dashed var(--border); border-radius: 12px; padding: 24px;
     text-align: center; cursor: pointer; transition: all 0.2s; background: #fff;
   }
   .drop-zone:hover, .drop-zone.drag-over { border-color: var(--primary); background: var(--primary-light); }
-  .drop-zone p { font-size: 0.9rem; color: var(--text-secondary); margin-top: 8px; }
+  .drop-zone p { font-size: 0.88rem; color: var(--text-secondary); margin-top: 8px; }
   .drop-zone input { display: none; }
-  .btn-full { width: 100%; justify-content: center; padding: 14px; font-size: 1rem; border-radius: 10px; margin-top: 8px; }
-  .success-msg { background: #ECFDF5; border: 1px solid #6EE7B7; color: #065F46; padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; display: none; margin-top: 12px; text-align: center; }
-  .error-msg   { background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; display: none; margin-top: 12px; text-align: center; }
-  .current-label { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px; }
+  .btn-full { width: 100%; justify-content: center; padding: 13px; font-size: 0.95rem; border-radius: 10px; margin-top: 6px; }
+  .msg { padding: 12px 16px; border-radius: 10px; font-size: 0.875rem; font-weight: 600; display: none; margin-top: 10px; text-align: center; }
+  .msg.success { background: #ECFDF5; border: 1px solid #6EE7B7; color: #065F46; }
+  .msg.error   { background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; }
+  .current-label { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 6px; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 16px; }
+
+  /* Reconciliation */
+  .recon-steps { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .recon-step { display: flex; gap: 10px; align-items: flex-start; }
+  .step-num { background: var(--primary); color: #fff; width: 22px; height: 22px; border-radius: 50%; font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .step-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+  .step-text strong { color: var(--text); }
+  .col-picker { display: none; margin-bottom: 14px; }
+  .col-picker label { font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+  .col-picker select { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: #fff; outline: none; }
+  .col-picker select:focus { border-color: var(--primary); }
+
+  /* Results table */
+  .recon-results { display: none; margin-top: 16px; }
+  .recon-summary { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .recon-pill { padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+  .pill-total    { background: #F3F4F6; color: #374151; }
+  .pill-matched  { background: #ECFDF5; color: #065F46; }
+  .pill-mismatch { background: #FEF2F2; color: #991B1B; }
+  .results-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .results-table th { text-align: left; padding: 8px 10px; background: var(--bg); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); border-bottom: 2px solid var(--border); }
+  .results-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .results-table tr:last-child td { border-bottom: none; }
+  .results-table tr.row-match    td:first-child { border-left: 3px solid var(--ready); }
+  .results-table tr.row-mismatch td:first-child { border-left: 3px solid #EF4444; }
+  .match-icon { font-size: 1rem; }
+  .utr-cell { font-family: monospace; font-size: 0.8rem; color: var(--text-secondary); }
+  .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+  .export-btn { margin-top: 12px; }
 </style>
 </head>
 <body>
 <header class="app-header">
   <div class="header-row">
     <div>
-      <h1>⚙️ Admin Setup</h1>
-      <p>Configure Paytm QR for payments</p>
+      <h1>⚙️ Admin</h1>
+      <p>Canteen setup &amp; reconciliation</p>
     </div>
     <a href="/" style="color:#fff;font-size:0.85rem;">← Back</a>
   </div>
 </header>
 
 <div class="admin-wrap">
+
+  <!-- ── QR Setup ── -->
   <div class="card">
     <h2>Paytm QR Code</h2>
-    <p class="sub">Upload your Paytm QR image. Customers will scan this after placing an order.</p>
+    <p class="sub">Upload your Paytm QR. Customers scan this after placing an order.</p>
 
     <div class="form-group">
       <label>Current QR</label>
@@ -76,18 +109,80 @@
     </div>
 
     <button class="btn btn-primary btn-full" id="btn-save">Save Payment Settings</button>
-    <div class="success-msg" id="success-msg">✅ Saved! Customers will now see the QR at checkout.</div>
-    <div class="error-msg"   id="error-msg"></div>
+    <div class="msg success" id="save-success">✅ Saved! Customers will now see the QR at checkout.</div>
+    <div class="msg error"   id="save-error"></div>
   </div>
+
+  <!-- ── UTR Reconciliation ── -->
+  <div class="card">
+    <h2>UTR Reconciliation</h2>
+    <p class="sub">Upload your Paytm transaction statement to verify all submitted UTRs against actual payments.</p>
+
+    <div class="recon-steps">
+      <div class="recon-step">
+        <div class="step-num">1</div>
+        <div class="step-text">Open <strong>Paytm for Business</strong> app → Passbook → Download Statement → choose date range → export as <strong>CSV</strong></div>
+      </div>
+      <div class="recon-step">
+        <div class="step-num">2</div>
+        <div class="step-text">Upload that CSV file below</div>
+      </div>
+      <div class="recon-step">
+        <div class="step-num">3</div>
+        <div class="step-text">The system checks every submitted UTR — <strong style="color:var(--ready)">✅ matched</strong> means payment is real, <strong style="color:#EF4444">❌ not found</strong> means the UTR may be fake</div>
+      </div>
+    </div>
+
+    <div class="drop-zone" id="csv-drop-zone">
+      <div style="font-size:2rem">📄</div>
+      <p>Tap to upload Paytm CSV statement</p>
+      <input type="file" id="csv-file" accept=".csv,text/csv">
+    </div>
+
+    <div class="col-picker" id="col-picker">
+      <label>Which column contains the UTR / Transaction ID?</label>
+      <select id="col-select"></select>
+    </div>
+
+    <div class="form-group" style="margin-top:14px">
+      <label>Admin PIN</label>
+      <input type="password" id="recon-pin" placeholder="Enter PIN" />
+    </div>
+
+    <button class="btn btn-primary btn-full" id="btn-reconcile" disabled>Run Reconciliation</button>
+    <div class="msg error" id="recon-error"></div>
+
+    <!-- Results -->
+    <div class="recon-results" id="recon-results">
+      <hr class="divider">
+      <div class="recon-summary" id="recon-summary"></div>
+      <div class="table-wrap">
+        <table class="results-table" id="results-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Customer</th>
+              <th>Amount</th>
+              <th>UTR Submitted</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+      <button class="btn btn-gray btn-full export-btn" id="btn-export-csv">⬇️ Export Results as CSV</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
+// ── QR Setup ──────────────────────────────────────────────────────────────
 const dropZone  = document.getElementById('drop-zone');
 const fileInput = document.getElementById('qr-file');
 const preview   = document.getElementById('qr-preview');
 let selectedImage = null;
 
-// Load current config
 fetch('/api/payment-config').then(r => r.json()).then(cfg => {
   if (cfg.qrImage) {
     preview.innerHTML = `<div class="current-label">Currently saved:</div><img src="${cfg.qrImage}" alt="QR">`;
@@ -99,10 +194,10 @@ fetch('/api/payment-config').then(r => r.json()).then(cfg => {
 dropZone.addEventListener('click', () => fileInput.click());
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFile(e.dataTransfer.files[0]); });
-fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleQrFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => handleQrFile(fileInput.files[0]));
 
-function handleFile(file) {
+function handleQrFile(file) {
   if (!file || !file.type.startsWith('image/')) return;
   const reader = new FileReader();
   reader.onload = e => {
@@ -113,19 +208,18 @@ function handleFile(file) {
 }
 
 document.getElementById('btn-save').addEventListener('click', async () => {
-  const pin     = document.getElementById('admin-pin').value.trim();
+  const pin = document.getElementById('admin-pin').value.trim();
   const upiName = document.getElementById('upi-name').value.trim();
-  const successEl = document.getElementById('success-msg');
-  const errorEl   = document.getElementById('error-msg');
+  const successEl = document.getElementById('save-success');
+  const errorEl   = document.getElementById('save-error');
   successEl.style.display = 'none';
   errorEl.style.display   = 'none';
 
   if (!selectedImage) { errorEl.textContent = 'Please upload a QR image first.'; errorEl.style.display = 'block'; return; }
-  if (!pin)            { errorEl.textContent = 'Please enter your admin PIN.';    errorEl.style.display = 'block'; return; }
+  if (!pin)           { errorEl.textContent = 'Please enter your admin PIN.';    errorEl.style.display = 'block'; return; }
 
   const btn = document.getElementById('btn-save');
   btn.disabled = true; btn.textContent = 'Saving…';
-
   try {
     const res = await fetch('/api/payment-config', {
       method: 'POST',
@@ -141,6 +235,148 @@ document.getElementById('btn-save').addEventListener('click', async () => {
   } finally {
     btn.disabled = false; btn.textContent = 'Save Payment Settings';
   }
+});
+
+// ── CSV / Reconciliation ──────────────────────────────────────────────────
+const csvDropZone = document.getElementById('csv-drop-zone');
+const csvFile     = document.getElementById('csv-file');
+let parsedRows = [];   // array of objects (one per CSV row)
+let csvHeaders = [];
+
+csvDropZone.addEventListener('click', () => csvFile.click());
+csvDropZone.addEventListener('dragover', e => { e.preventDefault(); csvDropZone.classList.add('drag-over'); });
+csvDropZone.addEventListener('dragleave', () => csvDropZone.classList.remove('drag-over'));
+csvDropZone.addEventListener('drop', e => { e.preventDefault(); csvDropZone.classList.remove('drag-over'); handleCsvFile(e.dataTransfer.files[0]); });
+csvFile.addEventListener('change', () => handleCsvFile(csvFile.files[0]));
+
+function parseCSV(text) {
+  // Handles quoted fields and commas inside quotes
+  const lines = text.trim().split(/\r?\n/);
+  const headers = splitCSVLine(lines[0]);
+  const rows = lines.slice(1).filter(l => l.trim()).map(l => {
+    const vals = splitCSVLine(l);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h.trim()] = (vals[i] || '').trim(); });
+    return obj;
+  });
+  return { headers, rows };
+}
+
+function splitCSVLine(line) {
+  const result = [];
+  let cur = '', inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuote = !inQuote; }
+    else if (ch === ',' && !inQuote) { result.push(cur); cur = ''; }
+    else { cur += ch; }
+  }
+  result.push(cur);
+  return result;
+}
+
+function guessUtrColumn(headers) {
+  const candidates = ['transaction id', 'txn id', 'utr', 'bank txn id', 'reference id', 'ref id', 'transaction reference', 'txnid'];
+  return headers.find(h => candidates.some(c => h.toLowerCase().includes(c))) || null;
+}
+
+function handleCsvFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const { headers, rows } = parseCSV(e.target.result);
+      parsedRows = rows;
+      csvHeaders = headers;
+
+      const guess = guessUtrColumn(headers);
+      const picker = document.getElementById('col-picker');
+      const sel    = document.getElementById('col-select');
+      sel.innerHTML = headers.map(h => `<option value="${h}" ${h === guess ? 'selected' : ''}>${h}</option>`).join('');
+      picker.style.display = 'block';
+
+      csvDropZone.querySelector('p').textContent = `✅ ${file.name} loaded — ${rows.length} transactions`;
+      document.getElementById('btn-reconcile').disabled = false;
+      document.getElementById('recon-results').style.display = 'none';
+    } catch {
+      document.getElementById('recon-error').textContent = 'Could not parse CSV. Make sure it is a valid CSV file.';
+      document.getElementById('recon-error').style.display = 'block';
+    }
+  };
+  reader.readAsText(file);
+}
+
+let lastResults = [];
+
+document.getElementById('btn-reconcile').addEventListener('click', async () => {
+  const pin = document.getElementById('recon-pin').value.trim();
+  const col = document.getElementById('col-select').value;
+  const errorEl = document.getElementById('recon-error');
+  errorEl.style.display = 'none';
+
+  if (!pin) { errorEl.textContent = 'Please enter your admin PIN.'; errorEl.style.display = 'block'; return; }
+  if (!parsedRows.length) { errorEl.textContent = 'Upload a CSV first.'; errorEl.style.display = 'block'; return; }
+
+  const utrs = parsedRows.map(r => r[col]).filter(Boolean);
+  if (!utrs.length) { errorEl.textContent = `Column "${col}" has no values. Pick the correct column.`; errorEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('btn-reconcile');
+  btn.disabled = true; btn.textContent = 'Checking…';
+
+  try {
+    const res = await fetch('/api/admin/reconcile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin, utrs }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    lastResults = data.orders;
+    renderResults(data);
+  } catch (e) {
+    errorEl.textContent = e.message;
+    errorEl.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Run Reconciliation';
+  }
+});
+
+function renderResults(data) {
+  const matched  = data.orders.filter(o => o.matched).length;
+  const mismatch = data.orders.filter(o => !o.matched).length;
+
+  document.getElementById('recon-summary').innerHTML = `
+    <span class="recon-pill pill-total">📋 ${data.orders.length} orders with UTR</span>
+    <span class="recon-pill pill-matched">✅ ${matched} verified</span>
+    ${mismatch ? `<span class="recon-pill pill-mismatch">❌ ${mismatch} not found</span>` : ''}
+    <span class="recon-pill pill-total" style="color:var(--text-secondary)">🔍 checked against ${data.checked} Paytm transactions</span>
+  `;
+
+  document.getElementById('results-body').innerHTML = data.orders.map(o => `
+    <tr class="${o.matched ? 'row-match' : 'row-mismatch'}">
+      <td><strong>#${o.id}</strong></td>
+      <td>${o.customer_name}<br><small style="color:var(--text-secondary)">Desk ${o.desk_number}</small></td>
+      <td>₹${o.total}</td>
+      <td class="utr-cell">${o.utr}</td>
+      <td class="match-icon">${o.matched ? '✅' : '❌'}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('recon-results').style.display = 'block';
+}
+
+document.getElementById('btn-export-csv').addEventListener('click', () => {
+  if (!lastResults.length) return;
+  const rows = [
+    ['Order #', 'Customer', 'Desk', 'Amount', 'UTR', 'Verified'],
+    ...lastResults.map(o => [o.id, o.customer_name, o.desk_number, o.total, o.utr, o.matched ? 'YES' : 'NO'])
+  ];
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `canteen-reconciliation-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
 });
 </script>
 </body>

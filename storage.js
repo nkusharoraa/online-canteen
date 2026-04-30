@@ -166,4 +166,12 @@ async function setConfig(key, value) {
   }
 }
 
-module.exports = { init, getActiveOrders, getOrderById, createOrder, updateOrderStatus, updatePaymentStatus, getConfig, setConfig };
+async function getOrdersWithUTR() {
+  if (usePostgres) {
+    const { rows } = await pool.query(`SELECT * FROM orders WHERE utr IS NOT NULL ORDER BY id DESC`);
+    return rows.map(toOrder);
+  }
+  return loadJson().orders.filter(o => o.utr).slice().reverse();
+}
+
+module.exports = { init, getActiveOrders, getOrderById, createOrder, updateOrderStatus, updatePaymentStatus, getConfig, setConfig, getOrdersWithUTR };

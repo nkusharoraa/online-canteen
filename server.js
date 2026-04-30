@@ -135,6 +135,33 @@ app.patch('/api/orders/:id/payment', async (req, res) => {
   }
 });
 
+// ── Reconciliation ─────────────────────────────────────────────────────────
+app.post('/api/admin/reconcile', async (req, res) => {
+  const { pin, utrs } = req.body;
+  if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'Wrong PIN' });
+  if (!Array.isArray(utrs)) return res.status(400).json({ error: 'utrs must be an array' });
+
+  try {
+    const orders = await storage.getOrdersWithUTR();
+    // Normalise: trim and lowercase for comparison
+    const paytmSet = new Set(utrs.map(u => u.trim().toLowerCase()));
+    const result = orders.map(o => ({
+      id:            o.id,
+      customer_name: o.customer_name,
+      desk_number:   o.desk_number,
+      total:         o.total,
+      utr:           o.utr,
+      status:        o.status,
+      created_at:    o.created_at,
+      matched:       paytmSet.has(o.utr.trim().toLowerCase()),
+    }));
+    res.json({ checked: utrs.length, orders: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Reconciliation failed' });
+  }
+});
+
 // ── Socket ─────────────────────────────────────────────────────────────────
 io.on('connection', async socket => {
   try {
