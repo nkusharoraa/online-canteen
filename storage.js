@@ -174,4 +174,13 @@ async function getOrdersWithUTR() {
   return loadJson().orders.filter(o => o.utr).slice().reverse();
 }
 
-module.exports = { init, getActiveOrders, getOrderById, createOrder, updateOrderStatus, updatePaymentStatus, getConfig, setConfig, getOrdersWithUTR };
+async function findOrderByUTR(utr) {
+  if (usePostgres) {
+    const { rows } = await pool.query(`SELECT * FROM orders WHERE LOWER(utr) = LOWER($1) LIMIT 1`, [utr]);
+    return rows[0] ? toOrder(rows[0]) : null;
+  }
+  const normalised = utr.toLowerCase();
+  return loadJson().orders.find(o => o.utr?.toLowerCase() === normalised) ?? null;
+}
+
+module.exports = { init, getActiveOrders, getOrderById, createOrder, updateOrderStatus, updatePaymentStatus, getConfig, setConfig, getOrdersWithUTR, findOrderByUTR };

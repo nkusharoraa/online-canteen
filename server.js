@@ -4,6 +4,19 @@ const { Server } = require('socket.io');
 const path    = require('path');
 const storage = require('./storage');
 
+// Shared UTR validation — same rules enforced on client too
+function validateUTR(utr) {
+  if (!utr || typeof utr !== 'string') return 'UTR is required.';
+  const v = utr.trim();
+  if (v.length < 8)  return 'UTR must be at least 8 characters.';
+  if (v.length > 30) return 'UTR must be at most 30 characters.';
+  if (!/^[a-zA-Z0-9]+$/.test(v)) return 'UTR must contain only letters and numbers — no spaces or symbols.';
+  if (/^(.)\1+$/.test(v)) return 'UTR looks invalid (all same character).';
+  if (/^(0123456789|1234567890|9876543210|0987654321)/.test(v) && v.length <= 12)
+    return 'UTR looks invalid (sequential digits).';
+  return null; // valid
+}
+
 const app    = express();
 const server = http.createServer(app);
 const io     = new Server(server);
@@ -122,13 +135,24 @@ app.patch('/api/orders/:id/status', async (req, res) => {
 });
 
 app.patch('/api/orders/:id/payment', async (req, res) => {
-  const { utr } = req.body;
-  if (!utr?.toString().trim()) return res.status(400).json({ error: 'UTR is required' });
+  const utr = req.body.utr?.toString().trim();
+
+  const formatErr = validateUTR(utr);
+  if (formatErr) return res.status(400).json({ error: formatErr });
+
   try {
-    const order = await storage.updatePaymentStatus(+req.params.id, 'paid', utr.toString().trim());
-    if (!order) return res.status(404).json({ error: 'Not found' });
-    io.emit('order_updated', order);
-    res.json(order);
+    const order = await storage.getOrderById(+req.params.id);
+    if (!order) return res.status(404).json({ error: 'Order not found.' });
+    if (order.payment_status === 'paid') return res.status(409).json({ error: 'This order is already marked as paid.' });
+
+    const duplicate = await storage.findOrderByUTR(utr);
+    if (duplicate && duplicate.id !== order.id) {
+      return res.status(409).json({ error: `This UTR was already used for order #${duplicate.id}. Each payment can only be applied once.` });
+    }
+
+    const updated = await storage.updatePaymentStatus(order.id, 'paid', utr);
+    io.emit('order_updated', updated);
+    res.json(updated);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Could not update payment' });

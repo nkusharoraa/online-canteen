@@ -276,9 +276,24 @@ function renderPaymentCard(order) {
   updatePaymentBadge(order.payment_status, order.utr);
 }
 
+function validateUTR(v) {
+  if (!v) return 'Please enter your UTR.';
+  if (v.length < 8)  return 'UTR must be at least 8 characters.';
+  if (v.length > 30) return 'UTR must be at most 30 characters.';
+  if (!/^[a-zA-Z0-9]+$/.test(v)) return 'Only letters and numbers — no spaces or symbols.';
+  if (/^(.)\1+$/.test(v)) return 'UTR looks invalid (all same character).';
+  return null;
+}
+
 $('btn-submit-utr').addEventListener('click', async () => {
   const utr = $('utr-input').value.trim();
-  if (!utr) { $('utr-input').focus(); $('utr-input').style.borderColor = '#EF4444'; return; }
+  const err = validateUTR(utr);
+  if (err) {
+    $('utr-input').style.borderColor = '#EF4444';
+    showToast(err, 'error');
+    $('utr-input').focus();
+    return;
+  }
   $('utr-input').style.borderColor = '';
 
   const btn = $('btn-submit-utr');
@@ -388,6 +403,8 @@ socket.on('order_updated', order => {
     }
   }
 });
+
+$('utr-input').addEventListener('input', () => { $('utr-input').style.borderColor = ''; });
 
 // Pre-load payment config in background so QR shows instantly
 loadPaymentConfig();
